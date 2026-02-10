@@ -46,14 +46,14 @@ jobs:
 
       - name: Show binary size & type
         run: |
-          ls -lh build/ishell-test
-          file build/ishell-test
+          ls -lh build/Lin_ishell
+          file build/Lin_ishell
 
       # Optional: keep the binary for download / manual testing
       - name: Upload built binary
         uses: actions/upload-artifact@v4
         with:
           name: ishell-test-ubuntu-22.04
-          path: build/ishell-test
+          path: build/Lin_ishell
           if-no-files-found: error
           retention-days: 5
