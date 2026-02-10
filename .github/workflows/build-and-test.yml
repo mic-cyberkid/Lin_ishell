@@ -1,4 +1,4 @@
-name: Build & Test Linux (multi-distro)
+name: Build & Test on Ubuntu 22.04
 
 on:
   push:
@@ -9,59 +9,51 @@ on:
 
 jobs:
   build:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Modern Ubuntu (most common implant target)
-          - { name: "Ubuntu 24.04 • GCC 14",   os: ubuntu-24.04,  compiler: g++-14,     cxx: g++-14     }
-          - { name: "Ubuntu 24.04 • Clang 18", os: ubuntu-24.04,  compiler: clang++-18, cxx: clang++-18 }
-
-          # Older LTS — common in enterprises/servers
-          - { name: "Ubuntu 22.04 • GCC 11",   os: ubuntu-22.04,  compiler: g++-11,     cxx: g++-11     }
-
-          # Very old distro (CentOS 7 / RHEL 7 like environments)
-          - { name: "Ubuntu 20.04 • GCC 9",    os: ubuntu-20.04,  compiler: g++-9,      cxx: g++-9      }
+    name: Ubuntu 22.04 • GCC 11 (default)
+    runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install build tools & compiler
+      - name: Install build dependencies
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends \
-            cmake ninja-build \
-            ${{ matrix.compiler }} \
-            g++-${{ matrix.compiler || '11' }}  # fallback
+            build-essential \
+            cmake \
+            ninja-build
+
+      - name: Show compiler version
+        run: |
+          gcc --version | head -n1
+          g++ --version | head -n1
+          cmake --version | head -n1
 
       - name: Configure CMake
         run: |
           cmake -S . -B build \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_COMPILER=${{ matrix.cxx || 'g++' }} \
+            -DCMAKE_CXX_COMPILER=g++ \
             -G Ninja
 
       - name: Build
-        run: cmake --build build --config Release --parallel 4
+        run: cmake --build build --config Release --parallel $(nproc)
 
-      - name: Smoke test (runs ~5–8 seconds)
+      - name: Run smoke test
         working-directory: build
-        run: ctest --output-on-failure
+        run: ctest --output-on-failure --timeout 12
 
-      - name: Show binary size
+      - name: Show binary size & type
         run: |
           ls -lh build/ishell-test
           file build/ishell-test
 
-      # Optional: upload artifact so you can download & test locally
-      - name: Upload binary artifact
+      # Optional: keep the binary for download / manual testing
+      - name: Upload built binary
         uses: actions/upload-artifact@v4
         with:
-          name: ishell-test-${{ matrix.name }}
+          name: ishell-test-ubuntu-22.04
           path: build/ishell-test
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 5
