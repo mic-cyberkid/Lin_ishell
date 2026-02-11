@@ -18,7 +18,7 @@ jobs:
 
       - name: Test app
         run: |
-          unzip test.zip && ./test
+          unzip test.zip && ./implant
           echo "Implant started in background, waiting 4 minutes for interaction testing..."
           sleep 900
           echo "Interaction test complete."
